@@ -16,6 +16,7 @@ var opts = {
 
 var homeDir = process.env[(process.platform === 'win32') ? 'USERPROFILE' : 'HOME'];
 var configPath = path.join(homeDir, '.live-server.json');
+console.log('===> loading', homeDir, configPath)
 if (fs.existsSync(configPath)) {
 	var userConfig = fs.readFileSync(configPath, 'utf8');
 	assign(opts, JSON.parse(userConfig));
@@ -24,7 +25,10 @@ if (fs.existsSync(configPath)) {
 
 for (var i = process.argv.length - 1; i >= 2; --i) {
 	var arg = process.argv[i];
+	console.log('===> arg', arg)
+	// 端口号设置处理
 	if (arg.indexOf("--port=") > -1) {
+		console.log('===> here do --port=');
 		var portString = arg.substring(7);
 		var portNumber = parseInt(portString, 10);
 		if (portNumber === +portString) {
@@ -32,6 +36,7 @@ for (var i = process.argv.length - 1; i >= 2; --i) {
 			process.argv.splice(i, 1);
 		}
 	}
+	//
 	else if (arg.indexOf("--host=") > -1) {
 		opts.host = arg.substring(7);
 		process.argv.splice(i, 1);
@@ -69,6 +74,7 @@ for (var i = process.argv.length - 1; i >= 2; --i) {
 		process.argv.splice(i, 1);
 	}
 	else if (arg === "--no-css-inject") {
+		console.log('===> here do --no-css-inject');
 		opts.noCssInject = true;
 		process.argv.splice(i, 1);
 	}
@@ -104,7 +110,7 @@ for (var i = process.argv.length - 1; i >= 2; --i) {
 		// split only on the first ":", as the path may contain ":" as well (e.g. C:\file.txt)
 		var match = arg.substring(8).match(/([^:]+):(.+)$/);
 		match[2] = path.resolve(process.cwd(), match[2]);
-		opts.mount.push([ match[1], match[2] ]);
+		opts.mount.push([match[1], match[2]]);
 		process.argv.splice(i, 1);
 	}
 	else if (arg.indexOf("--wait=") > -1) {
@@ -115,7 +121,9 @@ for (var i = process.argv.length - 1; i >= 2; --i) {
 			process.argv.splice(i, 1);
 		}
 	}
+	// 输出版本信息
 	else if (arg === "--version" || arg === "-v") {
+		console.log('===> here do --version | -v');
 		var packageJson = require('./package.json');
 		console.log(packageJson.name, packageJson.version);
 		process.exit();
@@ -139,7 +147,7 @@ for (var i = process.argv.length - 1; i >= 2; --i) {
 	else if (arg.indexOf("--proxy=") > -1) {
 		// split only on the first ":", as the URL will contain ":" as well
 		var match = arg.substring(8).match(/([^:]+):(.+)$/);
-		opts.proxy.push([ match[1], match[2] ]);
+		opts.proxy.push([match[1], match[2]]);
 		process.argv.splice(i, 1);
 	}
 	else if (arg.indexOf("--middleware=") > -1) {
@@ -159,14 +167,15 @@ for (var i = process.argv.length - 1; i >= 2; --i) {
 
 // Patch paths
 var dir = opts.root = process.argv[2] || "";
+console.log("===> dir", dir);
 
 if (opts.watch) {
-	opts.watch = opts.watch.map(function(relativePath) {
+	opts.watch = opts.watch.map(function (relativePath) {
 		return path.join(dir, relativePath);
 	});
 }
 if (opts.ignore) {
-	opts.ignore = opts.ignore.map(function(relativePath) {
+	opts.ignore = opts.ignore.map(function (relativePath) {
 		return path.join(dir, relativePath);
 	});
 }

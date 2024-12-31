@@ -2,7 +2,7 @@
 <script type="text/javascript">
 	// <![CDATA[  <-- For SVG support
 	if ('WebSocket' in window) {
-		(function() {
+		(function () {
 			function refreshCSS() {
 				var sheets = [].slice.call(document.getElementsByTagName("link"));
 				var head = document.getElementsByTagName("head")[0];
@@ -12,6 +12,7 @@
 					var rel = elem.rel;
 					if (elem.href && typeof rel != "string" || rel.length == 0 || rel.toLowerCase() == "stylesheet") {
 						var url = elem.href.replace(/(&|\?)_cacheOverride=\d+/, '');
+						// 更新缓存时间戳 重新触发css请求
 						elem.href = url + (url.indexOf('?') >= 0 ? '&' : '?') + '_cacheOverride=' + (new Date().valueOf());
 					}
 					head.appendChild(elem);
@@ -20,8 +21,8 @@
 			var protocol = window.location.protocol === 'http:' ? 'ws://' : 'wss://';
 			var address = protocol + window.location.host + window.location.pathname + '/ws';
 			var socket = new WebSocket(address);
-			socket.onmessage = function(msg) {
-				if (msg.data == 'reload') window.location.reload();
+			socket.onmessage = function (msg) {
+				if (msg.data == 'reload') window.location.reload(); // reload the page
 				else if (msg.data == 'refreshcss') refreshCSS();
 			};
 			console.log('Live reload enabled.');

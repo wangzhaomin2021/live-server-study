@@ -22,7 +22,7 @@ var LiveServer = {
 	logLevel: 2
 };
 
-function escape(html){
+function escape(html) {
 	return String(html)
 		.replace(/&(?!\w+;)/g, '&amp;')
 		.replace(/</g, '&lt;')
@@ -38,11 +38,11 @@ function staticServer(root) {
 	} catch (e) {
 		if (e.code !== "ENOENT") throw e;
 	}
-	return function(req, res, next) {
+	return function (req, res, next) {
 		if (req.method !== "GET" && req.method !== "HEAD") return next();
 		var reqpath = isFile ? "" : url.parse(req.url).pathname;
 		var hasNoOrigin = !req.headers.origin;
-		var injectCandidates = [ new RegExp("</body>", "i"), new RegExp("</svg>"), new RegExp("</head>", "i")];
+		var injectCandidates = [new RegExp("</body>", "i"), new RegExp("</svg>"), new RegExp("</head>", "i")];
 		var injectTag = null;
 
 		function directory() {
@@ -54,7 +54,7 @@ function staticServer(root) {
 
 		function file(filepath /*, stat*/) {
 			var x = path.extname(filepath).toLocaleLowerCase(), match,
-					possibleExtensions = [ "", ".html", ".htm", ".xhtml", ".php", ".svg" ];
+				possibleExtensions = ["", ".html", ".htm", ".xhtml", ".php", ".svg"];
 			if (hasNoOrigin && (possibleExtensions.indexOf(x) > -1)) {
 				// TODO: Sync file read here is not nice, but we need to determine if the html should be injected or not
 				var contents = fs.readFileSync(filepath, "utf8");
@@ -83,7 +83,7 @@ function staticServer(root) {
 				var len = INJECTED_CODE.length + res.getHeader('Content-Length');
 				res.setHeader('Content-Length', len);
 				var originalPipe = stream.pipe;
-				stream.pipe = function(resp) {
+				stream.pipe = function (resp) {
 					originalPipe.call(stream, es.replace(new RegExp(injectTag, "i"), INJECTED_CODE + injectTag)).pipe(resp);
 				};
 			}
@@ -104,9 +104,9 @@ function staticServer(root) {
  * @param file {string} Path to the entry point file
  */
 function entryPoint(staticHandler, file) {
-	if (!file) return function(req, res, next) { next(); };
+	if (!file) return function (req, res, next) { next(); };
 
-	return function(req, res, next) {
+	return function (req, res, next) {
 		req.url = "/" + file;
 		staticHandler(req, res, next);
 	};
@@ -129,7 +129,7 @@ function entryPoint(staticHandler, file) {
  * @param htpasswd {string} Path to htpasswd file to enable HTTP Basic authentication
  * @param middleware {array} Append middleware to stack, e.g. [function(req, res, next) { next(); }].
  */
-LiveServer.start = function(options) {
+LiveServer.start = function (options) {
 	options = options || {};
 	var host = options.host || '0.0.0.0';
 	var port = options.port !== undefined ? options.port : 8080; // 0 means random
@@ -172,15 +172,16 @@ LiveServer.start = function(options) {
 		app.use(logger('dev', {
 			skip: function (req, res) { return res.statusCode < 400; }
 		}));
-	// Level 2 or above logs all requests
+		// Level 2 or above logs all requests
 	} else if (LiveServer.logLevel > 2) {
 		app.use(logger('dev'));
 	}
+	// spa 内置中间件
 	if (options.spa) {
 		middleware.push("spa");
 	}
-	// Add middleware
-	middleware.map(function(mw) {
+	// Add middleware nodejs中间件
+	middleware.map(function (mw) {
 		if (typeof mw === "string") {
 			var ext = path.extname(mw).toLocaleLowerCase();
 			if (ext !== ".js") {
@@ -207,7 +208,7 @@ LiveServer.start = function(options) {
 			credentials: true // allowing requests with credentials
 		}));
 	}
-	mount.forEach(function(mountRule) {
+	mount.forEach(function (mountRule) {
 		var mountPath = path.resolve(process.cwd(), mountRule[1]);
 		if (!options.watch) // Auto add mount paths to wathing but only if exclusive path option is not given
 			watchPaths.push(mountPath);
@@ -215,7 +216,7 @@ LiveServer.start = function(options) {
 		if (LiveServer.logLevel >= 1)
 			console.log('Mapping %s to "%s"', mountRule[0], mountPath);
 	});
-	proxy.forEach(function(proxyRule) {
+	proxy.forEach(function (proxyRule) {
 		var proxyOpts = url.parse(proxyRule[1]);
 		proxyOpts.via = true;
 		proxyOpts.preserveHost = true;
@@ -241,11 +242,11 @@ LiveServer.start = function(options) {
 	}
 
 	// Handle server startup errors
-	server.addListener('error', function(e) {
+	server.addListener('error', function (e) {
 		if (e.code === 'EADDRINUSE') {
 			var serveURL = protocol + '://' + host + ':' + port;
 			console.log('%s is already in use. Trying another port.'.yellow, serveURL);
-			setTimeout(function() {
+			setTimeout(function () {
 				server.listen(0, host);
 			}, 1000);
 		} else {
@@ -255,7 +256,7 @@ LiveServer.start = function(options) {
 	});
 
 	// Handle successful server
-	server.addListener('listening', function(/*e*/) {
+	server.addListener('listening', function (/*e*/) {
 		LiveServer.server = server;
 
 		var address = server.address();
@@ -265,23 +266,23 @@ LiveServer.start = function(options) {
 		var serveURL = protocol + '://' + serveHost + ':' + address.port;
 		var openURL = protocol + '://' + openHost + ':' + address.port;
 
-		var serveURLs = [ serveURL ];
+		var serveURLs = [serveURL];
 		if (LiveServer.logLevel > 2 && address.address === "0.0.0.0") {
 			var ifaces = os.networkInterfaces();
 			serveURLs = Object.keys(ifaces)
-				.map(function(iface) {
+				.map(function (iface) {
 					return ifaces[iface];
 				})
 				// flatten address data, use only IPv4
-				.reduce(function(data, addresses) {
-					addresses.filter(function(addr) {
+				.reduce(function (data, addresses) {
+					addresses.filter(function (addr) {
 						return addr.family === "IPv4";
-					}).forEach(function(addr) {
+					}).forEach(function (addr) {
 						data.push(addr);
 					});
 					return data;
 				}, [])
-				.map(function(addr) {
+				.map(function (addr) {
 					return protocol + "://" + addr.address + ":" + address.port;
 				});
 		}
@@ -301,11 +302,11 @@ LiveServer.start = function(options) {
 		// Launch browser
 		if (openPath !== null)
 			if (typeof openPath === "object") {
-				openPath.forEach(function(p) {
-					open(openURL + p, {app: browser});
+				openPath.forEach(function (p) {
+					open(openURL + p, { app: browser });
 				});
 			} else {
-				open(openURL + openPath, {app: browser});
+				open(openURL + openPath, { app: browser });
 			}
 	});
 
@@ -314,25 +315,25 @@ LiveServer.start = function(options) {
 
 	// WebSocket
 	var clients = [];
-	server.addListener('upgrade', function(request, socket, head) {
+	server.addListener('upgrade', function (request, socket, head) {
 		var ws = new WebSocket(request, socket, head);
-		ws.onopen = function() { ws.send('connected'); };
+		ws.onopen = function () { ws.send('connected'); };
 
 		if (wait > 0) {
-			(function() {
+			(function () {
 				var wssend = ws.send;
 				var waitTimeout;
-				ws.send = function() {
+				ws.send = function () {
 					var args = arguments;
 					if (waitTimeout) clearTimeout(waitTimeout);
-					waitTimeout = setTimeout(function(){
+					waitTimeout = setTimeout(function () {
 						wssend.apply(ws, args);
 					}, wait);
 				};
 			})();
 		}
 
-		ws.onclose = function() {
+		ws.onclose = function () {
 			clients = clients.filter(function (x) {
 				return x !== ws;
 			});
@@ -342,7 +343,7 @@ LiveServer.start = function(options) {
 	});
 
 	var ignored = [
-		function(testPath) { // Always ignore dotfiles (important e.g. because editor hidden temp files)
+		function (testPath) { // Always ignore dotfiles (important e.g. because editor hidden temp files)
 			return testPath !== "." && /(^[.#]|(?:__|~)$)/.test(path.basename(testPath));
 		}
 	];
@@ -364,13 +365,18 @@ LiveServer.start = function(options) {
 				console.log("CSS change detected".magenta, changePath);
 			else console.log("Change detected".cyan, changePath);
 		}
-		clients.forEach(function(ws) {
+		clients.forEach(function (ws) {
+			// refreshcss or reload 逻辑 在injected.html内实现 启动了ws服务
 			if (ws)
 				ws.send(cssChange ? 'refreshcss' : 'reload');
 		});
 	}
+
+	// 观察粒度是开启监听的根目录 里面一切被watcher的要素 都会触发handleChange
+
 	LiveServer.watcher
 		.on("change", handleChange)
+		// 新增文件时触发 哪怕我没有引用它
 		.on("add", handleChange)
 		.on("unlink", handleChange)
 		.on("addDir", handleChange)
@@ -386,7 +392,7 @@ LiveServer.start = function(options) {
 	return server;
 };
 
-LiveServer.shutdown = function() {
+LiveServer.shutdown = function () {
 	var watcher = LiveServer.watcher;
 	if (watcher) {
 		watcher.close();
